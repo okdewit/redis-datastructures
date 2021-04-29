@@ -61,7 +61,7 @@ class IndexedCacheTest extends TestCase
         $retrieved = $foocache->find(1);
 
         $this->assertEquals($collection->first(), $retrieved);
-        $this->assertEquals($collection, $foocache->all()->pipeInto(FooCollection::class));
+        $this->assertEquals($collection, new FooCollection($foocache->all()));
 
         $foocache->flush();
     }
