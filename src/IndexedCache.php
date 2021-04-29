@@ -132,7 +132,7 @@ class IndexedCache
     {
         switch ($this->driver()) {
             case 'predis': return Redis::eval($script, count($args), ...$args);
-            case 'phpredis': return Redis::eval($script, $args);
+            case 'phpredis': return Redis::eval($script, $args, count($args));
         }
 
         return null;
