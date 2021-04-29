@@ -15,6 +15,7 @@ IndexedCache caches objects, and optionally maintains one or more secondary inde
 
 ```php
 $cache = new IndexedCache(
+
     // Name, prefix where the cached objects are stored
     'colorcache',
 
