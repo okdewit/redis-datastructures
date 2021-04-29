@@ -96,18 +96,19 @@ class IndexedCache
     public function all(): Collection
     {
         return $this->hydrate(
-            $this->eval("
+            Redis::eval("
                 local keys = redis.call('KEYS','$this->name:*');
                 table.sort(keys);
                 return redis.call('MGET',unpack(keys));
-            "));
+            ", 0)
+        );
     }
 
     public function flush(): void
     {
         Redis::transaction(function() {
-            $this->eval($this->deleteString("$this->name:*"));
-            $this->eval($this->deleteString("$this->name-index:*"));
+            Redis::eval($this->deleteString("$this->name:*"), 0);
+            Redis::eval($this->deleteString("$this->name-index:*"), 0);
         });
     }
 
@@ -119,22 +120,5 @@ class IndexedCache
     private function hydrate(array $items): Collection
     {
         return collect($items)->map(fn(string $object) => unserialize($object));
-    }
-
-    private function driver(): string
-    {
-        if (Redis::connection() instanceof PredisConnection) return 'predis';
-        if (Redis::connection() instanceof PredisClusterConnection) return 'predis';
-        return 'phpredis';
-    }
-
-    private function eval(string $script)
-    {
-        switch ($this->driver()) {
-            case 'predis': return Redis::eval($script, 0);
-            case 'phpredis': return Redis::eval($script);
-        }
-
-        return null;
     }
 }
