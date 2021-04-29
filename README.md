@@ -15,9 +15,14 @@ IndexedCache caches objects, and optionally maintains one or more secondary inde
 
 ```php
 $cache = new IndexedCache(
-    'colorcache',                                       // Name, prefix where the cached objects are stored
-    fn(Color $color) => $color->id,                     // A callbeck used to determine where the (integer) primary key can be found on the object
-    ['color' => fn(Color $color) => $color->color]      // An array with secondary index definitions.
+    // Name, prefix where the cached objects are stored
+    'colorcache',
+
+    // A callback used to determine where the (integer) primary key can be found on the object
+    fn(Color $color) => $color->id,
+
+    // An array with secondary index definitions.
+    ['color' => fn(Color $color) => $color->color]
 );
 ```
 
