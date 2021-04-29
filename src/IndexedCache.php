@@ -128,11 +128,11 @@ class IndexedCache
         return 'phpredis';
     }
 
-    private function eval(string $script, array $args = [])
+    private function eval(string $script)
     {
         switch ($this->driver()) {
-            case 'predis': return Redis::eval($script, count($args), ...$args);
-            case 'phpredis': return Redis::eval($script, $args, count($args));
+            case 'predis': return Redis::eval($script, 0);
+            case 'phpredis': return Redis::eval($script);
         }
 
         return null;
