@@ -1,0 +1,36 @@
+{
+    "name": "okdewit/redis-datastructures",
+    "description": "A Laravel + Redis library to create more advanced caching datastructures",
+    "type": "package",
+    "homepage": "https://github.com/okdewit/redis-datastructures",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Orian de Wit",
+            "email": "okdewit@gmail.com"
+        }
+    ],
+    "require": {
+        "php" : ">=7.4",
+        "laravel/framework" : "^6.0|^7.0|^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Okdewit\\RedisDS\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Okdewit\\RedisDS\\Tests\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "orchestra/testbench": "^6.12",
+        "predis/predis": "^1.1"
+    },
+    "scripts": {
+        "test": [
+            "./vendor/bin/phpunit tests/"
+        ]
+    }
+}
