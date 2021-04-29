@@ -97,9 +97,9 @@ class IndexedCache
     {
         return $this->hydrate(
             Redis::eval("
-                local keys = redis.call('KEYS','$this->name:*');
-                table.sort(keys);
-                return redis.call('MGET',unpack(keys));
+                local allkeys = redis.call('KEYS','$this->name:*');
+                table.sort(allkeys);
+                return redis.call('MGET',unpack(allkeys));
             ", 0)
         );
     }
