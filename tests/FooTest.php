@@ -9,6 +9,6 @@ class FooTest extends TestCase
 {
     public function test_it_works()
     {
-        $this->assertEquals('PONG', (string) Redis::ping());
+        $this->assertEquals('HELLO', (string) Redis::ping("HELLO"));
     }
 }
