@@ -6,9 +6,9 @@ namespace Okdewit\RedisDS\Tests;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Redis;
 use Okdewit\RedisDS\IndexedCache;
-use Okdewit\RedisDS\Tests\Stubs\Foo;
-use Okdewit\RedisDS\Tests\Stubs\FooCache;
-use Okdewit\RedisDS\Tests\Stubs\FooCollection;
+use Okdewit\RedisDS\Tests\Stubs\Color;
+use Okdewit\RedisDS\Tests\Stubs\ColorCache;
+use Okdewit\RedisDS\Tests\Stubs\ColorCollection;
 use stdClass;
 
 class IndexedCacheTest extends TestCase
@@ -20,21 +20,21 @@ class IndexedCacheTest extends TestCase
 
     public function test_it_caches_one_class()
     {
-        $foocache = new FooCache();
-        $original = new Foo(1, 'orange');
+        $colorcache = new ColorCache();
+        $original = new Color(1, 'orange');
 
-        $foocache->put($original);
-        $retrieved = $foocache->find(1);
+        $colorcache->put($original);
+        $retrieved = $colorcache->find(1);
 
-        $this->assertEquals(Foo::class, get_class($retrieved));
+        $this->assertEquals(Color::class, get_class($retrieved));
         $this->assertEquals($original, $retrieved);
 
-        $foocache->flush();
+        $colorcache->flush();
     }
 
     public function test_it_caches_one_object()
     {
-        $cache = new IndexedCache('objectcache', fn(object $foo) => $foo->id);
+        $cache = new IndexedCache('objectcache', fn(object $color) => $color->id);
         $original = (object) ['id' => 12, 'color' => 'yellow'];
 
         $cache->put($original);
@@ -48,21 +48,44 @@ class IndexedCacheTest extends TestCase
 
     public function test_it_warms_cache()
     {
-        $foocache = new FooCache();
+        $colorcache = new ColorCache();
 
-        $collection = new FooCollection([
-            new Foo(1, 'green'),
-            new Foo(2, 'blue'),
-            new Foo(3, 'cyan')
+        $collection = new ColorCollection([
+            new Color(1, 'green'),
+            new Color(2, 'blue'),
+            new Color(3, 'cyan')
         ]);
 
-        $foocache->warm($collection);
+        $colorcache->warm($collection);
 
-        $retrieved = $foocache->find(1);
+        $retrieved = $colorcache->find(1);
 
         $this->assertEquals($collection->first(), $retrieved);
-        $this->assertEquals($collection, new FooCollection($foocache->all()));
+        $this->assertEquals($collection, new ColorCollection($colorcache->all()));
 
-        $foocache->flush();
+        $colorcache->flush();
+    }
+
+    public function test_it_finds_by_index()
+    {
+        $colorcache = new ColorCache();
+
+        $collection = new ColorCollection([
+            new Color(1, 'green'),
+            new Color(2, 'blue'),
+            new Color(3, 'cyan'),
+            new Color(4, 'blue'),
+            new Color(5, 'blue'),
+            new Color(6, 'green')
+        ]);
+
+        $colorcache->warm($collection);
+
+        $retrieved = $colorcache->findBy('color', 'blue');
+
+        $this->assertCount(3, $retrieved);
+        $this->assertEquals([2,4,5], $retrieved->pluck('id')->toArray());
+
+        $colorcache->flush();
     }
 }

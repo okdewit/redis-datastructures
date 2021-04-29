@@ -2,7 +2,7 @@
 
 namespace Okdewit\RedisDS\Tests\Stubs;
 
-class Foo
+class Color
 {
     public int $id;
     public string $color;
