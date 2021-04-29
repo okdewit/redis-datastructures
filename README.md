@@ -1,6 +1,10 @@
 # Redis-datastructures
 A Laravel + Redis library to create more advanced caching datastructures
 
+This package is tested with PHP 7.4 & PHP 8.0,  
+with Laravel 6 and above,  
+and with both the `predis/predis` package & with the native `phpredis` ext.
+
 # Usage
 
 Current datastructures in this package:
