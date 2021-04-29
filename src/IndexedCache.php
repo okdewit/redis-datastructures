@@ -3,6 +3,8 @@
 namespace Okdewit\RedisDS;
 
 use Carbon\CarbonInterval;
+use Illuminate\Redis\Connections\PredisClusterConnection;
+use Illuminate\Redis\Connections\PredisConnection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Enumerable;
 use Illuminate\Support\Facades\Redis;
@@ -94,22 +96,22 @@ class IndexedCache
     public function all(): Collection
     {
         return $this->hydrate(
-            Redis::eval("
+            $this->eval("
                 local keys = redis.call('KEYS','$this->name:*');
                 table.sort(keys);
                 return redis.call('MGET',unpack(keys));
-            ", 0));
+            "));
     }
 
     public function flush(): void
     {
-        Redis::transaction(function($redis) {
-            $redis->eval($this->deleteScript("$this->name:*"), 0);
-            $redis->eval($this->deleteScript("$this->name-index:*"), 0);
+        Redis::transaction(function() {
+            $this->eval($this->deleteString("$this->name:*"));
+            $this->eval($this->deleteString("$this->name-index:*"));
         });
     }
 
-    private function deleteScript(string $pattern): string
+    private function deleteString(string $pattern): string
     {
         return "for _,k in ipairs(redis.call('keys','$pattern')) do redis.call('del',k) end";
     }
@@ -117,5 +119,22 @@ class IndexedCache
     private function hydrate(array $items): Collection
     {
         return collect($items)->map(fn(string $object) => unserialize($object));
+    }
+
+    private function driver(): string
+    {
+        if (Redis::connection() instanceof PredisConnection) return 'predis';
+        if (Redis::connection() instanceof PredisClusterConnection) return 'predis';
+        return 'phpredis';
+    }
+
+    private function eval(string $script, array $args = [])
+    {
+        switch ($this->driver()) {
+            case 'predis': return Redis::eval($script, count($args), ...$args);
+            case 'phpredis': return Redis::eval($script, $args);
+        }
+
+        return null;
     }
 }
