@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
     test:
-        name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }}
+        name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }} - ${{ matrix.redis-client }}
         runs-on: ubuntu-latest
         strategy:
             fail-fast: false
@@ -40,7 +40,7 @@ jobs:
               env:
                   REDIS_CLIENT: ${{ matrix.redis-client }}
                   REDIS_HOST: redis
-                  REDIS_PORT: redis
+                  REDIS_PORT: 6379
         services:
             redis:
                 image: redis
