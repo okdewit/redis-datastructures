@@ -71,8 +71,8 @@ class IndexedCache
 
     public function find(int $id): ?object
     {
-        $hit = unserialize(Redis::get("$this->name:$id"));
-        if (is_object($hit)) return $hit;
+        $hit = Redis::get("$this->name:$id");
+        if (is_string($hit)) return unserialize($hit);
 
         if (is_callable($this->onMiss) && is_object($hit = ($this->onMiss)($id))) {
             $this->put($hit);
@@ -97,9 +97,10 @@ class IndexedCache
     {
         return $this->hydrate(
             Redis::eval("
-                local allkeys = redis.call('KEYS','$this->name:*');
-                table.sort(allkeys);
-                return redis.call('MGET',unpack(allkeys));
+                local keys = redis.call('KEYS','$this->name:*');
+                if (table.getn(keys) == 0) then return {} end;
+                table.sort(keys);
+                return redis.call('MGET',unpack(keys));
             ", 0)
         );
     }

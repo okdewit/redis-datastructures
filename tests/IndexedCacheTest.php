@@ -88,4 +88,30 @@ class IndexedCacheTest extends TestCase
 
         $colorcache->flush();
     }
+
+    public function test_it_misses()
+    {
+        $colorcache = new ColorCache();
+
+        $original = new Color(1, 'orange');
+
+        $colorcache->put($original);
+        $retrieved = $colorcache->find(2);
+
+        // The miss handler on ColorCache specifies that a new Color purple should be created on a cache miss.
+        $this->assertEquals('purple', $retrieved->color);
+
+        $colorcache->flush();
+    }
+
+    public function test_empty()
+    {
+        $colorcache = new ColorCache();
+
+        $retrieved = $colorcache->all();
+
+        $this->assertEmpty($retrieved);
+
+        $colorcache->flush();
+    }
 }
