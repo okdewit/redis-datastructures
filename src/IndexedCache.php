@@ -118,7 +118,7 @@ class IndexedCache
         $keys = [];
         $cursor = "0";
         do {
-            [$cursor, $result] = Redis::scan($cursor, 'MATCH', "$this->name:*");
+            [$cursor, $result] = Redis::connection()->scan($cursor, ['MATCH' => "$this->name:*"]);
             $keys += $result;
         } while ($cursor !== "0");
 
