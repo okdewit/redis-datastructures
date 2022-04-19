@@ -119,6 +119,10 @@ class IndexedCache
         $cursor = "0";
         do {
             [$cursor, $result] = Redis::connection()->scan($cursor, ['MATCH' => "$this->name:*"]);
+            // account for php-redis return value
+            if ($cursor === null) {
+                break;
+            }
             $keys += $result;
         } while ($cursor !== "0");
 
