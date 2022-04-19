@@ -21,11 +21,14 @@ class IndexedCache
     /** @var callable */
     protected $onMiss;
 
+    protected string $redisClientType;
+
     public function __construct(string $name, callable $primaryIndex, array $secondaryIndexes = [])
     {
         $this->name = $name;
         $this->primaryIndex = $primaryIndex;
         $this->secondaryIndexes = $secondaryIndexes;
+        $this->redisClientType = (get_class(Redis::connection()->client()) === 'Predis\Client') ? 'Predis' : 'PhpRedis';
     }
 
     public function setTimeToLive(CarbonInterval $ttl): self
@@ -109,7 +112,10 @@ class IndexedCache
 
     private function nextIndex(string $indexName, string $cursor): ?string
     {
-        $index = Redis::zRangeByLex("$this->name-index:$indexName", "[$cursor\x00\xFF", "+", 'LIMIT', '0', '1');
+        $index = $this->redisClientType === 'PhpRedis'
+            ? Redis::zRangeByLex("$this->name-index:$indexName", "[$cursor\x00\xFF", "+", '0', '1')
+            : Redis::zRangeByLex("$this->name-index:$indexName", "[$cursor\x00\xFF", "+", 'LIMIT', '0', '1');
+
         return (isset($index[0])) ? $index[0] : null;
     }
 
