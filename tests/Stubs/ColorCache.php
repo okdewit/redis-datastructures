@@ -11,11 +11,11 @@ class ColorCache extends IndexedCache
     {
         parent::__construct(
             'colorcache',
-            fn(Color $color) => $color->id,
-            ['color' => fn(Color $color) => $color->color]
+            fn (Color $color) => $color->id,
+            ['color' => fn (Color $color) => $color->color]
         );
 
         $this->setTimeToLive(CarbonInterval::day())
-            ->setOnMiss(fn(int $id) => new Color($id, 'purple'));
+            ->setOnMiss(fn (int $id) => new Color($id, 'purple'));
     }
 }

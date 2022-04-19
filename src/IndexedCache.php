@@ -3,11 +3,10 @@
 namespace Okdewit\RedisDS;
 
 use Carbon\CarbonInterval;
-use Illuminate\Redis\Connections\PredisClusterConnection;
-use Illuminate\Redis\Connections\PredisConnection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Enumerable;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\LazyCollection;
 use Illuminate\Support\Str;
 
 class IndexedCache
@@ -43,15 +42,17 @@ class IndexedCache
 
     public function warm(Enumerable $collection, bool $flush = true): self
     {
-        if ($flush) $this->flush();
-        $collection->each(fn(object $item) => $this->put($item));
+        if ($flush) {
+            $this->flush();
+        }
+        $collection->each(fn (object $item) => $this->put($item));
 
         return $this;
     }
 
     public function put(object $object): self
     {
-        Redis::transaction(function($redis) use ($object) {
+        Redis::transaction(function ($redis) use ($object) {
             $id = ($this->primaryIndex)($object);
             $redis->set("$this->name:$id", serialize($object));
 
@@ -72,7 +73,9 @@ class IndexedCache
     public function find(int $id): ?object
     {
         $hit = Redis::get("$this->name:$id");
-        if (is_string($hit)) return unserialize($hit);
+        if (is_string($hit)) {
+            return unserialize($hit);
+        }
 
         if (is_callable($this->onMiss) && is_object($hit = ($this->onMiss)($id))) {
             $this->put($hit);
@@ -93,21 +96,40 @@ class IndexedCache
         return $this->hydrate(count($keys) > 0 ? Redis::mget($keys) : []);
     }
 
+    public function groupBy(string $indexName): LazyCollection
+    {
+        return new LazyCollection(function () use ($indexName) {
+            $cursor = "";
+            while (($index = $this->nextIndex($indexName, $cursor)) !== null) {
+                $cursor = Str::before($index, "\x00");
+                yield $cursor => $this->findBy($indexName, $cursor);
+            }
+        });
+    }
+
+    private function nextIndex(string $indexName, string $cursor): ?string
+    {
+        $index = Redis::zRangeByLex("$this->name-index:$indexName", "[$cursor\x00\xFF", "+", 'LIMIT', '0', '1');
+        return (isset($index[0])) ? $index[0] : null;
+    }
+
     public function all(): Collection
     {
-        return $this->hydrate(
-            Redis::eval("
-                local keys = redis.call('KEYS','$this->name:*');
-                if (table.getn(keys) == 0) then return {} end;
-                table.sort(keys);
-                return redis.call('MGET',unpack(keys));
-            ", 0)
-        );
+        $keys = [];
+        $cursor = "0";
+        do {
+            [$cursor, $result] = Redis::scan($cursor, 'MATCH', "$this->name:*");
+            $keys += $result;
+        } while ($cursor !== "0");
+
+        sort($keys);
+
+        return $this->hydrate(count($keys) > 0 ? Redis::mget($keys) : []);
     }
 
     public function flush(): void
     {
-        Redis::transaction(function() {
+        Redis::transaction(function () {
             Redis::eval($this->deleteString("$this->name:*"), 0);
             Redis::eval($this->deleteString("$this->name-index:*"), 0);
         });
@@ -120,6 +142,6 @@ class IndexedCache
 
     private function hydrate(array $items): Collection
     {
-        return collect($items)->map(fn(string $object) => unserialize($object));
+        return collect($items)->map(fn (string $object) => unserialize($object));
     }
 }

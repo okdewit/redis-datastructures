@@ -89,6 +89,31 @@ class IndexedCacheTest extends TestCase
         $colorcache->flush();
     }
 
+    public function test_it_groups_by_index()
+    {
+        $colorcache = new ColorCache();
+
+        $collection = new ColorCollection([
+            new Color(1, 'green'),
+            new Color(2, 'blue'),
+            new Color(3, 'cyan'),
+            new Color(4, 'blue'),
+            new Color(5, 'blue'),
+            new Color(6, 'green')
+        ]);
+
+        $colorcache->warm($collection);
+
+        $retrieved = $colorcache->groupBy('color');
+
+        $this->assertCount(3, $retrieved);
+        $this->assertEquals(['blue', 'cyan', 'green'], $retrieved->keys()->all());
+        $this->assertEquals([2, 4, 5], $retrieved->first()->pluck('id')->all());
+
+        $colorcache->flush();
+    }
+
+
     public function test_it_misses()
     {
         $colorcache = new ColorCache();
