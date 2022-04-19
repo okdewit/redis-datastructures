@@ -115,20 +115,14 @@ class IndexedCache
 
     public function all(): Collection
     {
-        $keys = [];
-        $cursor = "0";
-        do {
-            [$cursor, $result] = Redis::connection()->scan($cursor, ['MATCH' => "$this->name:*"]);
-            // account for php-redis return value
-            if ($cursor === null) {
-                break;
-            }
-            $keys += $result;
-        } while ($cursor !== "0");
-
-        sort($keys);
-
-        return $this->hydrate(count($keys) > 0 ? Redis::mget($keys) : []);
+        return $this->hydrate(
+            Redis::eval("
+                local keys = redis.call('KEYS','$this->name:*');
+                if (table.getn(keys) == 0) then return {} end;
+                table.sort(keys);
+                return redis.call('MGET',unpack(keys));
+            ", 0)
+        );
     }
 
     public function flush(): void
