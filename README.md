@@ -81,7 +81,7 @@ $this->assertEquals(['blue', 'green', 'purple'], $colorCollection->keys());
 `findBy` returns a plain `Illuminate\Support\Collection` with all the objects matching the indexed constraint.  
 This can of course be converted into a custom collection using something like `->pipeInto(ColorCollection::class)`.
 
-`groupBy` returns a `Collection` with multiple `Collections` inside, with all objects grouped by the provided secondary index. 
+`groupBy` returns a `LazyCollection` with multiple `Collections` inside, with all objects grouped by the provided secondary index. 
 
 Finally, the whole cache can also be retrieved, or emptied:
 ```php
